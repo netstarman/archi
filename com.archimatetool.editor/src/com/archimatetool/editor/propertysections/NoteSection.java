@@ -16,9 +16,10 @@ import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.PlatformUI;
 
-import com.archimatetool.editor.model.commands.EObjectFeatureCommand;
+import com.archimatetool.editor.model.commands.FeatureCommand;
 import com.archimatetool.model.IArchimatePackage;
 import com.archimatetool.model.IDiagramModelNote;
+import com.archimatetool.model.IFeatures;
 
 
 
@@ -68,8 +69,8 @@ public class NoteSection extends AbstractECorePropertySection {
 
                 for(EObject note : getEObjects()) {
                     if(isAlive(note)) {
-                        Command cmd = new EObjectFeatureCommand(Messages.NoteSection_4, note,
-                                IArchimatePackage.Literals.DIAGRAM_MODEL_NOTE__BORDER_TYPE, fComboBorderType.getSelectionIndex());
+                        Command cmd = new FeatureCommand("Border Type", (IFeatures)note, //$NON-NLS-1$ 
+                                "noteBorder", fComboBorderType.getSelectionIndex(), IDiagramModelNote.BORDER_DOGEAR);
                         if(cmd.canExecute()) {
                             result.add(cmd);
                         }
@@ -86,23 +87,25 @@ public class NoteSection extends AbstractECorePropertySection {
 
     @Override
     protected void notifyChanged(Notification msg) {
+        if(isFeatureNotification(msg, "noteBorder")) {
+            update();
+        }
+        
         if(msg.getNotifier() == getFirstSelectedObject()) {
-            Object feature = msg.getFeature();
-            
-            if(feature == IArchimatePackage.Literals.DIAGRAM_MODEL_NOTE__BORDER_TYPE ||
-                    feature == IArchimatePackage.Literals.LOCKABLE__LOCKED) {
+            if(msg.getFeature() == IArchimatePackage.Literals.LOCKABLE__LOCKED) {
                 update();
             }
         }
     }
-
+    
     @Override
     protected void update() {
         if(fIsExecutingCommand) {
             return; 
         }
         
-        fComboBorderType.select(((IDiagramModelNote)getFirstSelectedObject()).getBorderType());
+        int type = ((IDiagramModelNote)getFirstSelectedObject()).getFeatures().getInt("noteBorder", IDiagramModelNote.BORDER_DOGEAR);
+        fComboBorderType.select(type);
         fComboBorderType.setEnabled(!isLocked(getFirstSelectedObject()));
     }
     
