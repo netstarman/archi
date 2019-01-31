@@ -21,7 +21,7 @@ import org.eclipse.draw2d.ManhattanConnectionRouter;
 import org.eclipse.draw2d.MarginBorder;
 import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.notify.Notification;
-import org.eclipse.emf.common.notify.impl.AdapterImpl;
+import org.eclipse.emf.ecore.util.EContentAdapter;
 import org.eclipse.gef.LayerConstants;
 import org.eclipse.gef.SnapToHelper;
 import org.eclipse.jface.util.PropertyChangeEvent;
@@ -32,6 +32,7 @@ import com.archimatetool.editor.preferences.IPreferenceConstants;
 import com.archimatetool.editor.preferences.Preferences;
 import com.archimatetool.model.IArchimatePackage;
 import com.archimatetool.model.IDiagramModel;
+import com.archimatetool.model.IFeature;
 
 
 
@@ -49,9 +50,10 @@ implements IEditPartFilterProvider {
      */
     private List<IEditPartFilter> fEditPartFilters;
     
-    private Adapter adapter = new AdapterImpl() {
+    private Adapter adapter = new EContentAdapter() {
         @Override
         public void notifyChanged(Notification msg) {
+            super.notifyChanged(msg);
             eCoreChanged(msg);
         }
     };
@@ -61,6 +63,18 @@ implements IEditPartFilterProvider {
      * @param msg
      */
     protected void eCoreChanged(Notification msg) {
+        if(!isNotificationInteresting(msg)) {
+            return;
+        }
+
+        Object feature = msg.getFeature();
+        
+        // Archi Features
+        if(feature == IArchimatePackage.Literals.FEATURES__FEATURES || msg.getNotifier() instanceof IFeature) {
+            refreshVisuals();
+            return;
+        }
+
         switch(msg.getEventType()) {
             // Children added or removed
             case Notification.ADD:
@@ -73,7 +87,6 @@ implements IEditPartFilterProvider {
                 break;
                 
             case Notification.SET:
-                Object feature = msg.getFeature();
                 // Connection Router Type
                 if(feature == IArchimatePackage.Literals.DIAGRAM_MODEL__CONNECTION_ROUTER_TYPE) {
                     refreshVisuals();

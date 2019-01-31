@@ -27,6 +27,8 @@ import com.archimatetool.model.IAdapter;
 import com.archimatetool.model.IArchimateModel;
 import com.archimatetool.model.IArchimateModelObject;
 import com.archimatetool.model.IArchimatePackage;
+import com.archimatetool.model.IFeature;
+import com.archimatetool.model.IFeatures;
 import com.archimatetool.model.ILockable;
 
 
@@ -192,6 +194,31 @@ public abstract class AbstractECorePropertySection extends AbstractArchiProperty
         if(object != null) {
             object.eAdapters().remove(eAdapter);
         }
+    }
+    
+    /**
+     * Return true if the message notification is a feature with the given name
+     */
+    protected boolean isFeatureNotification(Notification msg, String name) {
+        if(!(getFirstSelectedObject() instanceof IFeatures)) {
+            return false;
+        }
+        
+        EObject notifier = (EObject)msg.getNotifier();
+        IFeatures features = (IFeatures)getFirstSelectedObject();
+        
+        // Feature added
+        if(msg.getFeature() == IArchimatePackage.Literals.FEATURES__FEATURES
+                && msg.getNewValue() instanceof IFeature) {
+            return name.equals(((IFeature)msg.getNewValue()).getName());
+        }
+        
+        // Todo: Feature Removed
+        
+        // Feature value of feature changed
+        return msg.getFeature() == IArchimatePackage.Literals.FEATURE__VALUE
+            && features.getFeatures().contains(notifier)
+            && name.equals(((IFeature)notifier).getName());
     }
     
     /**
